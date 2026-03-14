@@ -1,0 +1,210 @@
+/**
+ * StatsHeader — Sticky header showing overall GPA, year GPAs, and progress.
+ */
+
+import type { GPAStats } from "@/hooks/useGPA";
+import { useEffect, useRef, useState } from "react";
+import { Button } from "./ui/button";
+import { FileDown, Moon, RotateCcw, Sun } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Progress } from "./ui/progress";
+
+interface StatsHeaderProps {
+  stats: GPAStats;
+  onReset: () => void;
+  onExport: () => void;
+  isDark: boolean;
+  onToggleDark: () => void;
+  onJumpToYear: (year: number) => void;
+}
+
+export function StatsHeader({
+  stats,
+  onReset,
+  onExport,
+  isDark,
+  onToggleDark,
+  onJumpToYear,
+}: StatsHeaderProps) {
+  const [pop, setPop] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [isMobileCompact, setIsMobileCompact] = useState(false);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const prevGPA = useRef(stats.overallGPA);
+
+  // Trigger pop animation when GPA changes
+  useEffect(() => {
+    if (prevGPA.current !== stats.overallGPA) {
+      setPop(true);
+      prevGPA.current = stats.overallGPA;
+      const t = setTimeout(() => setPop(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [stats.overallGPA]);
+
+  useEffect(() => {
+    const updateMobileState = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+
+    updateMobileState();
+    window.addEventListener("resize", updateMobileState);
+
+    return () => {
+      window.removeEventListener("resize", updateMobileState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileView) {
+      setIsMobileCompact(false);
+      setIsMobileExpanded(false);
+      return;
+    }
+
+    const onScroll = () => {
+      const compact = window.scrollY > 40;
+      setIsMobileCompact(compact);
+      if (!compact) {
+        setIsMobileExpanded(false);
+      }
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [isMobileView]);
+
+  const showCompactBar = isMobileView && isMobileCompact && !isMobileExpanded;
+
+  return (
+    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl no-print">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        <Card>
+          {showCompactBar ? (
+            <div className="flex items-center justify-between p-3">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  Overall GPA
+                </p>
+                <p className="text-2xl font-black tabular-nums text-primary leading-none">
+                  {stats.overallGPA}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileExpanded(true)}
+                className="text-xs font-semibold px-3 py-1.5 rounded-md border border-border bg-background hover:bg-accent transition-colors"
+              >
+                Expand
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 gap-6">
+              {/* Left side: Main GPA and Progress */}
+              <div className="w-full lg:w-1/2 min-w-0">
+                <CardHeader className="p-0">
+                  <CardDescription>🎓 UCSC BIT — Overall GPA</CardDescription>
+                  <div className="mt-1 flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+                    <CardTitle
+                      className={`text-5xl font-black tabular-nums tracking-tighter text-primary leading-none ${pop ? "gpa-pop" : ""}`}
+                    >
+                      {stats.overallGPA}
+                    </CardTitle>
+                    <div className="inline-flex max-w-full items-center rounded-lg bg-secondary/50 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          🏅 Awarded Class
+                        </p>
+                        <p className="text-sm font-bold text-card-foreground truncate">
+                          {stats.degreeClass}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 mt-4">
+                  <div className="flex items-center gap-2">
+                    <Progress
+                      value={stats.completionPercent}
+                      className="h-1.5"
+                      aria-label={`${stats.completionPercent}% of modules completed`}
+                    />
+                    <span className="text-xs font-bold tabular-nums text-muted-foreground">
+                      {stats.completionPercent}%
+                    </span>
+                  </div>
+                </CardContent>
+              </div>
+
+              {/* Right side: Year GPAs and Actions */}
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4 w-full lg:w-auto">
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 flex-1">
+                  {[1, 2, 3].map((year) => (
+                    <button
+                      key={year}
+                      type="button"
+                      onClick={() => onJumpToYear(year)}
+                      className="text-center p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+                      aria-label={`Go to Year ${year} semesters`}
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        {year === 1 ? "🌱" : year === 2 ? "🚀" : "🏁"} Year{" "}
+                        {year}
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums">
+                        {stats.yearResults[year].gpa}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  {isMobileView && isMobileCompact && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsMobileExpanded(false)}
+                      size="sm"
+                    >
+                      Collapse
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={onExport} size="sm">
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button variant="destructive" onClick={onReset} size="sm">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onToggleDark}
+                    title="Toggle dark mode"
+                  >
+                    {isDark ? (
+                      <Sun className="h-4 w-4" />
+                    ) : (
+                      <Moon className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+    </header>
+  );
+}
