@@ -21,7 +21,8 @@ interface StatsHeaderProps {
   onExport: () => void;
   isDark: boolean;
   onToggleDark: () => void;
-  onJumpToYear: (year: number) => void;
+  activeYear: number;
+  onSelectYear: (year: number) => void;
 }
 
 export function StatsHeader({
@@ -30,7 +31,8 @@ export function StatsHeader({
   onExport,
   isDark,
   onToggleDark,
-  onJumpToYear,
+  activeYear,
+  onSelectYear,
 }: StatsHeaderProps) {
   const [pop, setPop] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
@@ -153,11 +155,14 @@ export function StatsHeader({
                     <button
                       key={year}
                       type="button"
-                      onClick={() => onJumpToYear(year)}
-                      className="text-center p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-                      aria-label={`Go to Year ${year} semesters`}
+                      onClick={() => onSelectYear(year)}
+                      className={`rounded-lg p-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${activeYear === year ? "bg-primary text-primary-foreground shadow-sm" : "bg-secondary/50 hover:bg-secondary"}`}
+                      aria-label={`View Year ${year}`}
+                      aria-pressed={activeYear === year}
                     >
-                      <p className="text-xs text-muted-foreground">
+                      <p
+                        className={`text-xs ${activeYear === year ? "text-primary-foreground/80" : "text-muted-foreground"}`}
+                      >
                         {year === 1 ? "🌱" : year === 2 ? "🚀" : "🏁"} Year{" "}
                         {year}
                       </p>

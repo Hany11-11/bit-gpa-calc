@@ -1,9 +1,10 @@
 /**
  * GPA Calculator — Main page component.
- * Assembles the sticky header and semester cards grid.
+ * Assembles the sticky header and active year view.
  */
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { YEARS } from "@/utils/constants";
 import { useGPA } from "@/hooks/useGPA";
 import { StatsHeader } from "@/components/StatsHeader";
@@ -15,6 +16,7 @@ const Index = () => {
   const { grades, repeatGrades, setGrade, setRepeatGrade, resetAll, stats } =
     useGPA();
   const [showFinalPopup, setShowFinalPopup] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Dark mode state persisted in localStorage
   const [isDark, setIsDark] = useState(() => {
@@ -29,21 +31,35 @@ const Index = () => {
     localStorage.setItem("bit-dark", String(isDark));
   }, [isDark]);
 
+  const yearParam = searchParams.get("year");
+  const parsedYear = Number(yearParam);
+  const activeYear = YEARS.some((year) => year.id === parsedYear)
+    ? parsedYear
+    : 1;
+  const activeYearData =
+    YEARS.find((year) => year.id === activeYear) ?? YEARS[0];
+
+  useEffect(() => {
+    if (yearParam !== String(activeYear)) {
+      setSearchParams({ year: String(activeYear) }, { replace: true });
+    }
+  }, [activeYear, yearParam, setSearchParams]);
+
   const handleExport = () => {
     window.print();
   };
 
-  const handleJumpToYear = (year: number) => {
-    const section = document.getElementById(`year-section-${year}`);
-    if (!section) return;
-
-    section.scrollIntoView({
+  const handleSelectYear = (year: number) => {
+    setSearchParams({ year: String(year) });
+    window.scrollTo({
+      top: 0,
       behavior: "smooth",
-      block: "start",
     });
   };
 
   const isYear3Complete = stats.yearResults[3].credits >= 30;
+  const canGoPrevious = activeYear > 1;
+  const canGoNext = activeYear < YEARS.length;
 
   return (
     <div className="min-h-screen app-atmosphere text-foreground transition-colors duration-300">
@@ -53,105 +69,149 @@ const Index = () => {
         onExport={handleExport}
         isDark={isDark}
         onToggleDark={() => setIsDark((d) => !d)}
-        onJumpToYear={handleJumpToYear}
+        activeYear={activeYear}
+        onSelectYear={handleSelectYear}
       />
 
       <main className="max-w-6xl mx-auto p-4 sm:p-6">
-        {YEARS.map((year) => (
-          <section
-            key={year.id}
-            id={`year-section-${year.id}`}
-            className="mb-12 scroll-mt-36"
-          >
-            <h2 className="mb-6 text-center text-2xl font-bold tracking-tight md:mx-auto md:max-w-5xl md:text-left">
-              {year.id === 1 ? "🌱 " : year.id === 2 ? "🚀 " : "🏁 "}
-              {year.title}
-            </h2>
+        <section className="mb-12">
+          <div className="mb-6 rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm backdrop-blur md:mx-auto md:max-w-5xl">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  Year Navigation
+                </p>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-card-foreground">
+                  {activeYear === 1 ? "🌱 " : activeYear === 2 ? "🚀 " : "🏁 "}
+                  {activeYearData.title}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  View one academic year at a time. Your entered grades stay
+                  saved when you switch years.
+                </p>
+              </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:max-w-5xl md:mx-auto">
-              {year.semesters.map((sem) => (
-                <SemesterCard
-                  key={sem.id}
-                  semester={sem}
-                  result={stats.semesterResults[sem.id]}
-                  grades={grades}
-                  repeatGrades={repeatGrades}
-                  onGradeChange={setGrade}
-                  onRepeatGradeChange={setRepeatGrade}
-                />
-              ))}
+              <div className="flex flex-wrap gap-2">
+                {YEARS.map((year) => (
+                  <Button
+                    key={year.id}
+                    variant={year.id === activeYear ? "default" : "outline"}
+                    className="rounded-full"
+                    onClick={() => handleSelectYear(year.id)}
+                    aria-pressed={year.id === activeYear}
+                  >
+                    {year.id === 1 ? "🌱" : year.id === 2 ? "🚀" : "🏁"}{" "}
+                    {year.title}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:max-w-5xl md:mx-auto">
+            {activeYearData.semesters.map((sem) => (
+              <SemesterCard
+                key={sem.id}
+                semester={sem}
+                result={stats.semesterResults[sem.id]}
+                grades={grades}
+                repeatGrades={repeatGrades}
+                onGradeChange={setGrade}
+                onRepeatGradeChange={setRepeatGrade}
+              />
+            ))}
+          </div>
+
+          {stats.yearRuleResults[activeYear] && (
+            <div className="mt-5 rounded-xl border border-sky-200/70 bg-sky-50/80 p-4 md:max-w-5xl md:mx-auto dark:border-sky-800/60 dark:bg-sky-950/20">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-card-foreground">
+                  {stats.yearRuleResults[activeYear]?.title}
+                </p>
+                <span
+                  className={`rounded px-2 py-1 text-xs font-semibold ${stats.yearRuleResults[activeYear]?.allSatisfied ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}`}
+                >
+                  {stats.yearRuleResults[activeYear]?.allSatisfied
+                    ? "✅ All rules satisfied"
+                    : "⚠️ Rules pending"}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {stats.yearRuleResults[activeYear]?.checks.map((check) => (
+                  <div
+                    key={check.id}
+                    className="flex items-start justify-between gap-3 rounded-lg border border-border/60 px-3 py-2"
+                  >
+                    <div>
+                      <p className="text-sm text-card-foreground">
+                        {check.label}
+                      </p>
+                      {check.detail && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {check.detail}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`mt-0.5 shrink-0 text-xs font-bold ${check.satisfied ? "text-success" : "text-destructive"}`}
+                    >
+                      {check.satisfied ? "✅ PASS" : "❌ FAIL"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 dark:border-amber-700/60 dark:bg-amber-950/25">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                  Disclaimer: Unofficial result for academic planning only.
+                  Official results are published by UCSC on their official
+                  website.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-col gap-3 md:mx-auto md:max-w-5xl md:flex-row md:items-center md:justify-between">
+            <div className="flex gap-2 no-print">
+              <Button
+                variant="outline"
+                onClick={() => handleSelectYear(activeYear - 1)}
+                disabled={!canGoPrevious}
+                className="rounded-xl"
+              >
+                Previous Year
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleSelectYear(activeYear + 1)}
+                disabled={!canGoNext}
+                className="rounded-xl"
+              >
+                Next Year
+              </Button>
             </div>
 
-            {year.id <= 3 && stats.yearRuleResults[year.id] && (
-              <div className="mt-5 rounded-xl border border-sky-200/70 bg-sky-50/80 p-4 md:max-w-5xl md:mx-auto dark:border-sky-800/60 dark:bg-sky-950/20">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <p className="text-sm font-semibold text-card-foreground">
-                    {stats.yearRuleResults[year.id]?.title}
-                  </p>
-                  <span
-                    className={`text-xs font-semibold px-2 py-1 rounded ${stats.yearRuleResults[year.id]?.allSatisfied ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}`}
-                  >
-                    {stats.yearRuleResults[year.id]?.allSatisfied
-                      ? "✅ All rules satisfied"
-                      : "⚠️ Rules pending"}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {stats.yearRuleResults[year.id]?.checks.map((check) => (
-                    <div
-                      key={check.id}
-                      className="flex items-start justify-between gap-3 rounded-lg border border-border/60 px-3 py-2"
-                    >
-                      <div>
-                        <p className="text-sm text-card-foreground">
-                          {check.label}
-                        </p>
-                        {check.detail && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {check.detail}
-                          </p>
-                        )}
-                      </div>
-                      <span
-                        className={`mt-0.5 shrink-0 text-xs font-bold ${check.satisfied ? "text-success" : "text-destructive"}`}
-                      >
-                        {check.satisfied ? "✅ PASS" : "❌ FAIL"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-3 rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 dark:border-amber-700/60 dark:bg-amber-950/25">
-                  <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                    Disclaimer: Unofficial result for academic planning only.
-                    Official results are published by UCSC on their official
-                    website.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {year.id === 3 && (
-              <div className="mt-4 no-print md:mx-auto md:max-w-5xl">
+            {activeYear === 3 && (
+              <div className="no-print">
                 <Button
                   onClick={() => setShowFinalPopup(true)}
                   disabled={!isYear3Complete}
                   className="rounded-xl"
                 >
-                  <Award className="h-4 w-4 mr-2" />
+                  <Award className="mr-2 h-4 w-4" />
                   🎯 Get Overall GPA
                 </Button>
                 {!isYear3Complete && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     Complete all Level III GPA modules to view final GPA
                     summary.
                   </p>
                 )}
               </div>
             )}
-          </section>
-        ))}
+          </div>
+        </section>
       </main>
 
       {showFinalPopup && (
