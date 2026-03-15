@@ -57,6 +57,10 @@ const Index = () => {
     });
   };
 
+  const getBestAttemptGrade = (moduleId: string) => {
+    return repeatGrades[moduleId] || grades[moduleId] || "-";
+  };
+
   const isYear3Complete = stats.yearResults[3].credits >= 30;
   const canGoPrevious = activeYear > 1;
   const canGoNext = activeYear < YEARS.length;
@@ -74,7 +78,7 @@ const Index = () => {
       />
 
       <main className="max-w-6xl mx-auto p-4 sm:p-6">
-        <section className="mb-12">
+        <section className="mb-12 print:hidden">
           <div className="mb-6 rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm backdrop-blur md:mx-auto md:max-w-5xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -210,6 +214,95 @@ const Index = () => {
                 )}
               </div>
             )}
+          </div>
+        </section>
+
+        <section className="hidden print:block">
+          <div className="mb-4 border-b border-black pb-3">
+            <h1 className="text-2xl font-bold">UCSC BIT GPA Export Report</h1>
+            <p className="text-sm text-muted-foreground">
+              Overall GPA: {stats.overallGPA} | Class GPA: {stats.classGPA} |
+              Awarded Class: {stats.degreeClass}
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {YEARS.map((year) => (
+              <div key={`print-year-${year.id}`} className="break-inside-avoid">
+                <h2 className="text-xl font-bold mb-2">{year.title}</h2>
+                <p className="text-sm mb-3">
+                  Year GPA: {stats.yearResults[year.id].gpa}
+                </p>
+
+                <div className="space-y-4">
+                  {year.semesters.map((semester) => (
+                    <div
+                      key={`print-sem-${semester.id}`}
+                      className="border border-black/30 rounded-md p-3"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-base font-semibold">
+                          {semester.title}
+                        </h3>
+                        <span className="text-sm">
+                          SGPA: {stats.semesterResults[semester.id].gpa}
+                        </span>
+                      </div>
+
+                      <table className="w-full text-sm border-collapse">
+                        <thead>
+                          <tr className="border-b border-black/30">
+                            <th className="text-left py-1 pr-2">Module</th>
+                            <th className="text-left py-1 pr-2">Credits</th>
+                            <th className="text-left py-1 pr-2">Type</th>
+                            <th className="text-left py-1">Best Attempt</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {semester.modules.map((module) => (
+                            <tr
+                              key={`print-mod-${module.id}`}
+                              className="border-b border-black/10"
+                            >
+                              <td className="py-1 pr-2">{module.name}</td>
+                              <td className="py-1 pr-2">{module.credits}</td>
+                              <td className="py-1 pr-2 uppercase">
+                                {module.type}
+                              </td>
+                              <td className="py-1">
+                                {getBestAttemptGrade(module.id)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div className="mt-4 border-t border-black pt-4 break-inside-avoid">
+              <h2 className="text-xl font-bold mb-2">Final Summary</h2>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <div className="border border-black/30 rounded-md p-3">
+                  <p className="text-xs">Overall GPA</p>
+                  <p className="text-xl font-bold tabular-nums">
+                    {stats.overallGPA}
+                  </p>
+                </div>
+                <div className="border border-black/30 rounded-md p-3">
+                  <p className="text-xs">Class GPA</p>
+                  <p className="text-xl font-bold tabular-nums">
+                    {stats.classGPA}
+                  </p>
+                </div>
+                <div className="border border-black/30 rounded-md p-3">
+                  <p className="text-xs">Awarded Class</p>
+                  <p className="text-xl font-bold">{stats.degreeClass}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
