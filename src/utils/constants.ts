@@ -125,7 +125,7 @@ export const YEARS: Year[] = [
             id: "BIT1205",
             name: "Communication Skills 1",
             type: "non-gpa",
-            credits: 0,
+            credits: 3,
           },
         ],
       },
@@ -143,7 +143,7 @@ export const YEARS: Year[] = [
             id: "EN3106",
             name: "Communication Skills II",
             type: "non-gpa",
-            credits: 0,
+            credits: 2,
           },
           {
             id: "IT3106",
@@ -221,7 +221,7 @@ export const YEARS: Year[] = [
             id: "EN5106",
             name: "Fundamentals of Management & Entrepreneurship",
             type: "non-gpa",
-            credits: 0,
+            credits: 2,
           },
           {
             id: "IT5206",

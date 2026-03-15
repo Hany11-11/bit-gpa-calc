@@ -57,6 +57,7 @@ export function ModuleRow({
   const [menuMaxHeight, setMenuMaxHeight] = useState(280);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const previousNeedsRepeatRef = useRef(false);
 
   const badge = typeBadge[type];
   const gradeOptions =
@@ -81,6 +82,7 @@ export function ModuleRow({
   const hasBaseGrade = grade !== "" && grade !== "Not Sit";
   const disableRepeatButton = !repeatOpen && !canRepeat && hasBaseGrade;
   const showRepeatControls = countsForGPA(type) || repeatOpen;
+  const showRepeatInlineAlert = canRepeat && repeatGrade === "";
   const repeatHint = !hasBaseGrade
     ? "Select your first-attempt grade to unlock repeat."
     : canRepeat
@@ -101,6 +103,19 @@ export function ModuleRow({
       onRepeatGradeChange(id, "");
     }
   }, [canRepeat, id, onRepeatGradeChange, repeatGrade, repeatOpen]);
+
+  useEffect(() => {
+    const needsRepeatInput = canRepeat && repeatGrade === "";
+
+    if (needsRepeatInput && !previousNeedsRepeatRef.current) {
+      toast.error("If you have repeat, please input the repeat grade.", {
+        description: "A grade below C was selected.",
+        duration: 4000,
+      });
+    }
+
+    previousNeedsRepeatRef.current = needsRepeatInput;
+  }, [canRepeat, repeatGrade]);
 
   useEffect(() => {
     setPortalReady(true);
@@ -279,6 +294,12 @@ export function ModuleRow({
             )}
         </div>
       </div>
+
+      {showRepeatInlineAlert && (
+        <p className="mt-1 whitespace-nowrap text-[11px] font-medium leading-tight text-destructive text-right">
+          If repeated, add repeat grade.
+        </p>
+      )}
 
       {showRepeatControls && (
         <div className="mt-2 rounded-lg border border-border/70 bg-secondary/30 px-2.5 py-2">

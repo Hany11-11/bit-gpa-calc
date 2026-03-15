@@ -8,7 +8,7 @@ import type { SemesterResult } from "@/hooks/useGPA";
 import { ModuleRow } from "./ModuleRow";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertTriangle } from "lucide-react";
-import { GRADE_SCALE } from "@/utils/constants";
+import { countsForGPA, GRADE_SCALE } from "@/utils/constants";
 import { toast } from "./ui/sonner";
 
 interface SemesterCardProps {
@@ -28,14 +28,27 @@ export function SemesterCard({
   onGradeChange,
   onRepeatGradeChange,
 }: SemesterCardProps) {
+  const semesterTitleColorClass: Record<number, string> = {
+    1: "text-sky-600 dark:text-sky-400",
+    2: "text-emerald-600 dark:text-emerald-400",
+    3: "text-amber-600 dark:text-amber-400",
+    4: "text-rose-600 dark:text-rose-400",
+    5: "text-violet-600 dark:text-violet-400",
+    6: "text-cyan-600 dark:text-cyan-400",
+  };
+
   const previousIneligibleCountRef = useRef(0);
 
   const ineligibleCount = semester.modules.filter((mod) => {
-    const grade = grades[mod.id];
+    const grade = repeatGrades[mod.id] || grades[mod.id];
     if (!grade) return false;
 
     if (mod.type === "non-gpa") {
       return grade === "Fail" || grade === "Not Sit";
+    }
+
+    if (!countsForGPA(mod.type)) {
+      return false;
     }
 
     if (grade === "Not Sit") return true;
@@ -62,7 +75,9 @@ export function SemesterCard({
       {/* Header */}
       <div className="flex justify-between items-start mb-4 pb-3 border-b border-border">
         <div>
-          <h2 className="font-bold text-base tracking-tight text-card-foreground">
+          <h2
+            className={`font-bold text-base tracking-tight ${semesterTitleColorClass[semester.id] ?? "text-card-foreground"}`}
+          >
             {semester.title}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">

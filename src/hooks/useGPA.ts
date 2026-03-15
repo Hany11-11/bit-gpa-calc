@@ -4,7 +4,13 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
-import { countsForGPA, GRADE_SCALE, SEMESTERS, YEARS } from "@/utils/constants";
+import {
+  countsForGPA,
+  GRADE_SCALE,
+  SEMESTERS,
+  YEARS,
+  type ModuleType,
+} from "@/utils/constants";
 
 export interface SemesterResult {
   gpa: string;
@@ -110,8 +116,8 @@ export function useGPA() {
 
     const selectedLevel3OptionalId = optionalCandidates[0]?.id ?? null;
 
-    const moduleCountsForProgramGPA = (moduleId: string, type: string) => {
-      if (!countsForGPA(type as any)) return false;
+    const moduleCountsForProgramGPA = (moduleId: string, type: ModuleType) => {
+      if (!countsForGPA(type)) return false;
       if (type !== "optional") return true;
       if (!level3OptionalIds.has(moduleId)) return true;
       return moduleId === selectedLevel3OptionalId;
@@ -294,14 +300,28 @@ export function useGPA() {
       [];
 
     const levelGpaCredits = (level: number) => {
-      const modules = levelModules(level).filter((m) =>
-        moduleCountsForProgramGPA(m.id, m.type),
-      );
+      const modules = levelModules(level).filter((m) => m.credits > 0);
       return modules.reduce((sum, mod) => {
-        const grade = getOverallGrade(mod.id);
-        if (!grade || grade === "Not Sit") return sum;
-        const point = getOverallPoint(mod.id);
-        if (point === null || point === undefined) return sum;
+        if (mod.type === "non-gpa") {
+          return getOverallGrade(mod.id) === "Pass" ? sum + mod.credits : sum;
+        }
+
+        if (!countsForGPA(mod.type)) {
+          return sum;
+        }
+
+        const firstPoint = GRADE_SCALE[grades[mod.id]];
+        const repeatPoint = GRADE_SCALE[repeatGrades[mod.id]];
+
+        // For 90/30 credits, use the better attempt when a repeat is present.
+        const pointCandidates = [firstPoint, repeatPoint].filter(
+          (p): p is number => p !== null && p !== undefined,
+        );
+        if (pointCandidates.length === 0) return sum;
+
+        const bestPoint = Math.max(...pointCandidates);
+        if (bestPoint < GRADE_SCALE.D) return sum;
+
         return sum + mod.credits;
       }, 0);
     };
@@ -314,7 +334,9 @@ export function useGPA() {
         const grade = getOverallGrade(mod.id);
         if (!grade || grade === "Not Sit") return sum;
         const point = getOverallPoint(mod.id);
-        if (point === null || point === undefined || point < 2) return sum;
+        if (point === null || point === undefined || point < GRADE_SCALE.C) {
+          return sum;
+        }
         return sum + mod.credits;
       }, 0);
     };
@@ -376,7 +398,7 @@ export function useGPA() {
           level1GpaCredits >= 30 &&
           level2GpaCredits >= 30 &&
           level3GpaCredits >= 30,
-        detail: `Current: L1 ${level1GpaCredits}/30, L2 ${level2GpaCredits}/30, L3 ${level3GpaCredits}/30, Total ${totalGpaCreditsAllLevels}/90`,
+        detail: `Earned credits: L1 ${level1GpaCredits}, L2 ${level2GpaCredits}, L3 ${level3GpaCredits}, Total ${totalGpaCreditsAllLevels}`,
       },
       {
         id: "y3-degree-overall-gpa",
@@ -392,7 +414,7 @@ export function useGPA() {
           level1CreditsAtLeastC >= 20 &&
           level2CreditsAtLeastC >= 20 &&
           level3CreditsAtLeastC >= 20,
-        detail: `Current: L1 ${level1CreditsAtLeastC}/20, L2 ${level2CreditsAtLeastC}/20, L3 ${level3CreditsAtLeastC}/20`,
+        detail: `Earned C-or-above GPA credits: L1 - ${level1CreditsAtLeastC}, L2 - ${level2CreditsAtLeastC}, L3 - ${level3CreditsAtLeastC}`,
       },
       {
         id: "y3-degree-sdp-c-or-above",

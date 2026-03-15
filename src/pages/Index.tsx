@@ -56,19 +56,19 @@ const Index = () => {
         onJumpToYear={handleJumpToYear}
       />
 
-      <main className="max-w-7xl mx-auto p-4 sm:p-6">
+      <main className="max-w-6xl mx-auto p-4 sm:p-6">
         {YEARS.map((year) => (
           <section
             key={year.id}
             id={`year-section-${year.id}`}
             className="mb-12 scroll-mt-36"
           >
-            <h2 className="text-2xl font-bold tracking-tight text-center md:text-left mb-6">
+            <h2 className="mb-6 text-center text-2xl font-bold tracking-tight md:mx-auto md:max-w-5xl md:text-left">
               {year.id === 1 ? "🌱 " : year.id === 2 ? "🚀 " : "🏁 "}
               {year.title}
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:max-w-5xl md:mx-auto">
               {year.semesters.map((sem) => (
                 <SemesterCard
                   key={sem.id}
@@ -83,7 +83,7 @@ const Index = () => {
             </div>
 
             {year.id <= 3 && stats.yearRuleResults[year.id] && (
-              <div className="mt-5 rounded-xl border border-border bg-card/60 p-4">
+              <div className="mt-5 rounded-xl border border-sky-200/70 bg-sky-50/80 p-4 md:max-w-5xl md:mx-auto dark:border-sky-800/60 dark:bg-sky-950/20">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <p className="text-sm font-semibold text-card-foreground">
                     {stats.yearRuleResults[year.id]?.title}
@@ -121,11 +121,19 @@ const Index = () => {
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-3 rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 dark:border-amber-700/60 dark:bg-amber-950/25">
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                    Disclaimer: Unofficial result for academic planning only.
+                    Official results are published by UCSC on their official
+                    website.
+                  </p>
+                </div>
               </div>
             )}
 
             {year.id === 3 && (
-              <div className="mt-4 no-print">
+              <div className="mt-4 no-print md:mx-auto md:max-w-5xl">
                 <Button
                   onClick={() => setShowFinalPopup(true)}
                   disabled={!isYear3Complete}
@@ -234,11 +242,6 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="max-w-7xl mx-auto px-6 py-8 text-center no-print">
-        <p className="text-sm text-muted-foreground">
-          🎓 UCSC BIT GPA Calculator — Unofficial result for academic planning
-          only. Official results are published by UCSC on their official
-          website.
-        </p>
         <p className="text-sm md:text-base text-foreground mt-2 font-medium">
           Developed by{" "}
           <a
