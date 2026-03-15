@@ -38,17 +38,17 @@ export function StatsHeader({
   const [isMobileView, setIsMobileView] = useState(false);
   const [isMobileCompact, setIsMobileCompact] = useState(false);
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-  const prevGPA = useRef(stats.overallGPA);
+  const prevGPA = useRef(stats.classGPA);
 
-  // Trigger pop animation when GPA changes
+  // Trigger pop animation when the visible headline GPA changes.
   useEffect(() => {
-    if (prevGPA.current !== stats.overallGPA) {
+    if (prevGPA.current !== stats.classGPA) {
       setPop(true);
-      prevGPA.current = stats.overallGPA;
+      prevGPA.current = stats.classGPA;
       const t = setTimeout(() => setPop(false), 300);
       return () => clearTimeout(t);
     }
-  }, [stats.overallGPA]);
+  }, [stats.classGPA]);
 
   useEffect(() => {
     const updateMobileState = () => {
@@ -96,10 +96,10 @@ export function StatsHeader({
             <div className="flex items-center justify-between p-3">
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  Overall GPA
+                  Class GPA
                 </p>
                 <p className="text-2xl font-semibold tabular-nums text-primary leading-none">
-                  {stats.overallGPA}
+                  {stats.classGPA}
                 </p>
               </div>
               <button
@@ -115,12 +115,12 @@ export function StatsHeader({
               {/* Left side: Main GPA and Progress */}
               <div className="w-full lg:w-1/2 min-w-0">
                 <CardHeader className="p-0">
-                  <CardDescription>🎓 UCSC BIT — Overall GPA</CardDescription>
+                  <CardDescription>🎓 UCSC BIT — Class GPA</CardDescription>
                   <div className="mt-1 flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
                     <CardTitle
                       className={`text-5xl font-semibold tabular-nums tracking-tight text-primary leading-none ${pop ? "gpa-pop" : ""}`}
                     >
-                      {stats.overallGPA}
+                      {stats.classGPA}
                     </CardTitle>
                     <div className="inline-flex max-w-full items-center rounded-lg bg-secondary/50 px-3 py-2">
                       <div className="min-w-0">
@@ -133,6 +133,9 @@ export function StatsHeader({
                       </div>
                     </div>
                   </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Exact overall GPA is shown after you click Get Overall GPA.
+                  </p>
                 </CardHeader>
                 <CardContent className="p-0 mt-4">
                   <div className="flex items-center gap-2">

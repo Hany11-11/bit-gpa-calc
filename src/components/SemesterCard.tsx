@@ -8,7 +8,11 @@ import type { SemesterResult } from "@/hooks/useGPA";
 import { ModuleRow } from "./ModuleRow";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertTriangle } from "lucide-react";
-import { countsForGPA, GRADE_SCALE } from "@/utils/constants";
+import {
+  countsForGPA,
+  getEffectiveGrade,
+  GRADE_SCALE,
+} from "@/utils/constants";
 import { toast } from "./ui/sonner";
 
 interface SemesterCardProps {
@@ -40,7 +44,11 @@ export function SemesterCard({
   const previousIneligibleCountRef = useRef(0);
 
   const ineligibleCount = semester.modules.filter((mod) => {
-    const grade = repeatGrades[mod.id] || grades[mod.id];
+    const grade = getEffectiveGrade(
+      mod.type,
+      grades[mod.id],
+      repeatGrades[mod.id],
+    );
     if (!grade) return false;
 
     if (mod.type === "non-gpa") {
@@ -89,7 +97,7 @@ export function SemesterCard({
             SGPA
           </span>
           <p className="text-xl font-black tabular-nums text-primary leading-tight">
-            {result.gpa}
+            {result.classGPA}
           </p>
         </div>
       </div>

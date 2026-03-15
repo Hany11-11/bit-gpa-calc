@@ -6,6 +6,7 @@
 import { useState, useMemo, useCallback } from "react";
 import {
   countsForGPA,
+  getEffectiveGrade,
   GRADE_SCALE,
   SEMESTERS,
   YEARS,
@@ -14,6 +15,7 @@ import {
 
 export interface SemesterResult {
   gpa: string;
+  classGPA: string;
   credits: number;
   modulesCompleted: number;
   totalGpaModules: number;
@@ -70,7 +72,13 @@ export function useGPA() {
 
   const stats: GPAStats = useMemo(() => {
     const getOverallGrade = (moduleId: string) =>
-      repeatGrades[moduleId] || grades[moduleId] || "";
+      getEffectiveGrade(
+        YEARS.flatMap((year) => year.semesters)
+          .flatMap((semester) => semester.modules)
+          .find((module) => module.id === moduleId)?.type ?? "gpa",
+        grades[moduleId],
+        repeatGrades[moduleId],
+      );
 
     const getOverallPoint = (moduleId: string) => {
       const grade = getOverallGrade(moduleId);
@@ -137,6 +145,7 @@ export function useGPA() {
 
     SEMESTERS.forEach((sem) => {
       let semPoints = 0;
+      let semClassPoints = 0;
       let semCredits = 0;
       let semCompleted = 0;
       const totalGpaModules = sem.modules.filter((m) =>
@@ -153,6 +162,7 @@ export function useGPA() {
         const point = getOverallPoint(mod.id);
         if (point !== null && point !== undefined) {
           semPoints += point * mod.credits;
+          semClassPoints += (getClassPoint(mod.id) ?? point) * mod.credits;
           semCredits += mod.credits;
           semCompleted++;
           completedModules++;
@@ -160,8 +170,11 @@ export function useGPA() {
       });
 
       const gpa = semCredits > 0 ? (semPoints / semCredits).toFixed(2) : "—";
+      const classGPA =
+        semCredits > 0 ? (semClassPoints / semCredits).toFixed(2) : "—";
       semesterResults[sem.id] = {
         gpa,
+        classGPA,
         credits: semCredits,
         modulesCompleted: semCompleted,
         totalGpaModules,
@@ -310,17 +323,19 @@ export function useGPA() {
           return sum;
         }
 
-        const firstPoint = GRADE_SCALE[grades[mod.id]];
-        const repeatPoint = GRADE_SCALE[repeatGrades[mod.id]];
-
-        // For 90/30 credits, use the better attempt when a repeat is present.
-        const pointCandidates = [firstPoint, repeatPoint].filter(
-          (p): p is number => p !== null && p !== undefined,
+        const effectiveGrade = getEffectiveGrade(
+          mod.type,
+          grades[mod.id],
+          repeatGrades[mod.id],
         );
-        if (pointCandidates.length === 0) return sum;
-
-        const bestPoint = Math.max(...pointCandidates);
-        if (bestPoint < GRADE_SCALE.D) return sum;
+        const effectivePoint = GRADE_SCALE[effectiveGrade];
+        if (
+          effectivePoint === null ||
+          effectivePoint === undefined ||
+          effectivePoint < GRADE_SCALE.D
+        ) {
+          return sum;
+        }
 
         return sum + mod.credits;
       }, 0);

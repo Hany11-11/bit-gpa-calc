@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { YEARS } from "@/utils/constants";
+import { getEffectiveGrade, YEARS } from "@/utils/constants";
 import { useGPA } from "@/hooks/useGPA";
 import { StatsHeader } from "@/components/StatsHeader";
 import { SemesterCard } from "@/components/SemesterCard";
@@ -58,7 +58,18 @@ const Index = () => {
   };
 
   const getBestAttemptGrade = (moduleId: string) => {
-    return repeatGrades[moduleId] || grades[moduleId] || "-";
+    const moduleType = YEARS.flatMap((year) => year.semesters)
+      .flatMap((semester) => semester.modules)
+      .find((module) => module.id === moduleId)?.type;
+
+    if (!moduleType) {
+      return repeatGrades[moduleId] || grades[moduleId] || "-";
+    }
+
+    return (
+      getEffectiveGrade(moduleType, grades[moduleId], repeatGrades[moduleId]) ||
+      "-"
+    );
   };
 
   const printYears = YEARS.map((year) => {
@@ -276,7 +287,9 @@ const Index = () => {
                             <th className="text-left py-1 pr-2">Module</th>
                             <th className="text-left py-1 pr-2">Credits</th>
                             <th className="text-left py-1 pr-2">Type</th>
-                            <th className="text-left py-1">Best Attempt</th>
+                            <th className="text-left py-1">
+                              Effective Attempt
+                            </th>
                           </tr>
                         </thead>
                         <tbody>

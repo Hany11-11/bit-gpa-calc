@@ -48,6 +48,27 @@ export function countsForGPA(type: ModuleType) {
   return type === "gpa" || type === "optional";
 }
 
+export function getEffectiveGrade(
+  type: ModuleType,
+  firstAttemptGrade?: string,
+  repeatGrade?: string,
+) {
+  const baseGrade = firstAttemptGrade || "";
+  const repeatedGrade = repeatGrade || "";
+
+  if (!repeatedGrade) return baseGrade;
+  if (!baseGrade) return repeatedGrade;
+  if (!countsForGPA(type)) return repeatedGrade;
+
+  const basePoint = GRADE_SCALE[baseGrade];
+  const repeatPoint = GRADE_SCALE[repeatedGrade];
+
+  if (basePoint === null || basePoint === undefined) return repeatedGrade;
+  if (repeatPoint === null || repeatPoint === undefined) return baseGrade;
+
+  return repeatPoint >= basePoint ? repeatedGrade : baseGrade;
+}
+
 export interface Module {
   id: string;
   name: string;
