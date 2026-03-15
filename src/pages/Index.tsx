@@ -61,6 +61,26 @@ const Index = () => {
     return repeatGrades[moduleId] || grades[moduleId] || "-";
   };
 
+  const printYears = YEARS.map((year) => {
+    const semesters = year.semesters
+      .map((semester) => {
+        const modules = semester.modules.filter(
+          (module) => Boolean(grades[module.id]) || Boolean(repeatGrades[module.id]),
+        );
+
+        return {
+          ...semester,
+          modules,
+        };
+      })
+      .filter((semester) => semester.modules.length > 0);
+
+    return {
+      ...year,
+      semesters,
+    };
+  }).filter((year) => year.semesters.length > 0);
+
   const isYear3Complete = stats.yearResults[3].credits >= 30;
   const canGoPrevious = activeYear > 1;
   const canGoNext = activeYear < YEARS.length;
@@ -227,7 +247,7 @@ const Index = () => {
           </div>
 
           <div className="space-y-6">
-            {YEARS.map((year) => (
+            {printYears.map((year) => (
               <div key={`print-year-${year.id}`} className="break-inside-avoid">
                 <h2 className="text-xl font-bold mb-2">{year.title}</h2>
                 <p className="text-sm mb-3">
@@ -281,6 +301,12 @@ const Index = () => {
                 </div>
               </div>
             ))}
+
+            {printYears.length === 0 && (
+              <div className="border border-black/30 rounded-md p-3 text-sm">
+                No filled module details to print yet.
+              </div>
+            )}
 
             <div className="mt-4 border-t border-black pt-4 break-inside-avoid">
               <h2 className="text-xl font-bold mb-2">Final Summary</h2>

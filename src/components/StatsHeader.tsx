@@ -98,7 +98,7 @@ export function StatsHeader({
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
                   Overall GPA
                 </p>
-                <p className="text-2xl font-black tabular-nums text-primary leading-none">
+                <p className="text-2xl font-semibold tabular-nums text-primary leading-none">
                   {stats.overallGPA}
                 </p>
               </div>
@@ -118,7 +118,7 @@ export function StatsHeader({
                   <CardDescription>🎓 UCSC BIT — Overall GPA</CardDescription>
                   <div className="mt-1 flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
                     <CardTitle
-                      className={`text-5xl font-black tabular-nums tracking-tighter text-primary leading-none ${pop ? "gpa-pop" : ""}`}
+                      className={`text-5xl font-semibold tabular-nums tracking-tight text-primary leading-none ${pop ? "gpa-pop" : ""}`}
                     >
                       {stats.overallGPA}
                     </CardTitle>
