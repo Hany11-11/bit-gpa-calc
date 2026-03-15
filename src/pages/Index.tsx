@@ -65,7 +65,8 @@ const Index = () => {
     const semesters = year.semesters
       .map((semester) => {
         const modules = semester.modules.filter(
-          (module) => Boolean(grades[module.id]) || Boolean(repeatGrades[module.id]),
+          (module) =>
+            Boolean(grades[module.id]) || Boolean(repeatGrades[module.id]),
         );
 
         return {
