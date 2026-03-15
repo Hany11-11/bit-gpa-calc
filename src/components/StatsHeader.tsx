@@ -149,7 +149,7 @@ export function StatsHeader({
               </div>
 
               {/* Right side: Year GPAs and Actions */}
-              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4 w-full lg:w-auto">
+              <div className="flex w-full flex-col items-stretch gap-4 sm:flex-row sm:items-center lg:w-auto">
                 <div className="grid grid-cols-3 gap-3 sm:gap-4 flex-1">
                   {[1, 2, 3].map((year) => (
                     <button
@@ -174,35 +174,48 @@ export function StatsHeader({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
                   {isMobileView && isMobileCompact && (
                     <Button
                       variant="outline"
                       onClick={() => setIsMobileExpanded(false)}
                       size="sm"
+                      className="w-full sm:w-auto"
                     >
                       Collapse
                     </Button>
                   )}
-                  <Button variant="outline" onClick={onExport} size="sm">
+                  <Button
+                    variant="outline"
+                    onClick={onExport}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <FileDown className="h-4 w-4 mr-2" />
                     Export
                   </Button>
-                  <Button variant="destructive" onClick={onReset} size="sm">
+                  <Button
+                    variant="destructive"
+                    onClick={onReset}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset
                   </Button>
                   <Button
                     variant="outline"
-                    size="icon"
+                    size={isMobileView ? "sm" : "icon"}
                     onClick={onToggleDark}
                     title="Toggle dark mode"
+                    className="w-full sm:w-auto"
                   >
                     {isDark ? (
                       <Sun className="h-4 w-4" />
                     ) : (
                       <Moon className="h-4 w-4" />
                     )}
+                    {isMobileView && <span>Theme</span>}
                   </Button>
                 </div>
               </div>
