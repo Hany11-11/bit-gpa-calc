@@ -475,6 +475,8 @@ export function useGPA() {
       title: "Level III degree eligibility rules",
       allSatisfied: degreeChecks.every((c) => c.satisfied),
       checks: degreeChecks,
+      overallGpa: "—",
+      classGpa: "—",
     };
 
     const degreeEligible = yearRuleResults[3].allSatisfied;
