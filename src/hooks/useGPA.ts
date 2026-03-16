@@ -52,6 +52,8 @@ export interface YearRuleResult {
   title: string;
   allSatisfied: boolean;
   checks: RuleCheckResult[];
+  overallGpa: string;
+  classGpa: string;
 }
 
 export function useGPA() {
@@ -238,7 +240,9 @@ export function useGPA() {
       const enhancementModules = modules.filter((m) => m.type === "non-gpa");
 
       let points = 0;
+      let classPoints = 0;
       let credits = 0;
+      let classCredits = 0;
       let creditsWithPointAtLeastTwo = 0;
 
       gpaModules.forEach((mod) => {
@@ -249,12 +253,20 @@ export function useGPA() {
 
         points += point * mod.credits;
         credits += mod.credits;
+
+        const classPoint = getClassPoint(mod.id);
+        if (classPoint !== null && classPoint !== undefined) {
+          classPoints += classPoint * mod.credits;
+          classCredits += mod.credits;
+        }
+
         if (point >= 2) {
           creditsWithPointAtLeastTwo += mod.credits;
         }
       });
 
       const gpa = credits > 0 ? points / credits : 0;
+      const classGpa = classCredits > 0 ? classPoints / classCredits : 0;
 
       const rule1 = gpa >= 2;
       const rule2 = creditsWithPointAtLeastTwo >= 20;
@@ -297,6 +309,8 @@ export function useGPA() {
         title,
         allSatisfied: checks.every((c) => c.satisfied),
         checks,
+        overallGpa: gpa > 0 ? gpa.toFixed(2) : "—",
+        classGpa: classGpa > 0 ? classGpa.toFixed(2) : "—",
       };
     };
 

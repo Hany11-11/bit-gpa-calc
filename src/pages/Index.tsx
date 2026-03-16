@@ -144,18 +144,20 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:max-w-5xl md:mx-auto">
-            {activeYearData.semesters.map((sem) => (
-              <SemesterCard
-                key={sem.id}
-                semester={sem}
-                result={stats.semesterResults[sem.id]}
-                grades={grades}
-                repeatGrades={repeatGrades}
-                onGradeChange={setGrade}
-                onRepeatGradeChange={setRepeatGrade}
-              />
-            ))}
+          <div className="rounded-xl border border-border/70 bg-card/50 p-4 shadow-sm backdrop-blur-sm md:p-6 md:max-w-5xl md:mx-auto">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              {activeYearData.semesters.map((sem) => (
+                <SemesterCard
+                  key={sem.id}
+                  semester={sem}
+                  result={stats.semesterResults[sem.id]}
+                  grades={grades}
+                  repeatGrades={repeatGrades}
+                  onGradeChange={setGrade}
+                  onRepeatGradeChange={setRepeatGrade}
+                />
+              ))}
+            </div>
           </div>
 
           {stats.yearRuleResults[activeYear] && (
@@ -171,6 +173,21 @@ const Index = () => {
                     ? "✅ All rules satisfied"
                     : "⚠️ Rules pending"}
                 </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div className="rounded-lg border border-border/60 p-3">
+                  <p className="text-xs text-muted-foreground">Overall GPA</p>
+                  <p className="text-2xl font-bold text-card-foreground">
+                    {stats.yearRuleResults[activeYear]?.overallGpa}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/60 p-3">
+                  <p className="text-xs text-muted-foreground">Class GPA</p>
+                  <p className="text-2xl font-bold text-card-foreground">
+                    {stats.yearRuleResults[activeYear]?.classGpa}
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2">
