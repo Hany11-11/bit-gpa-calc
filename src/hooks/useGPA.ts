@@ -23,6 +23,7 @@ export interface SemesterResult {
 
 export interface YearResult {
   gpa: string;
+  classGPA: string;
   credits: number;
 }
 
@@ -192,6 +193,7 @@ export function useGPA() {
       const yCreds = s1.credits + s2.credits;
       // Recalculate from raw points
       let yPoints = 0;
+      let yClassPoints = 0;
       [year * 2 - 1, year * 2].forEach((semId) => {
         const sem = SEMESTERS.find((s) => s.id === semId)!;
         sem.modules.forEach((mod) => {
@@ -205,11 +207,13 @@ export function useGPA() {
           const point = getOverallPoint(mod.id);
           if (point !== null && point !== undefined) {
             yPoints += point * mod.credits;
+            yClassPoints += (getClassPoint(mod.id) ?? point) * mod.credits;
           }
         });
       });
       yearResults[year] = {
         gpa: yCreds > 0 ? (yPoints / yCreds).toFixed(2) : "—",
+        classGPA: yCreds > 0 ? (yClassPoints / yCreds).toFixed(2) : "—",
         credits: yCreds,
       };
     }

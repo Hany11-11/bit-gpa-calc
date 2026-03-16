@@ -170,7 +170,7 @@ export function StatsHeader({
                         {year}
                       </p>
                       <p className="text-2xl font-bold tabular-nums">
-                        {stats.yearResults[year].gpa}
+                        {stats.yearResults[year].classGPA}
                       </p>
                     </button>
                   ))}
