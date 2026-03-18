@@ -462,7 +462,7 @@ const Index = () => {
           >
             Hariram
           </a>{" "}
-          (BIT Graduate 2025)
+          (BIT Graduate | Academic Year 2024)
         </p>
       </footer>
     </div>
