@@ -91,8 +91,17 @@ export function StatsHeader({
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl no-print">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-        <Card>
-          {showCompactBar ? (
+        <Card className="overflow-hidden">
+
+          {/* ── Compact bar (mobile, scrolled) ── */}
+          <div
+            className="transition-all duration-300 ease-in-out overflow-hidden"
+            style={{
+              maxHeight: showCompactBar ? "80px" : "0px",
+              opacity: showCompactBar ? 1 : 0,
+              pointerEvents: showCompactBar ? "auto" : "none",
+            }}
+          >
             <div className="flex items-center justify-between p-3">
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
@@ -110,7 +119,17 @@ export function StatsHeader({
                 Expand
               </button>
             </div>
-          ) : (
+          </div>
+
+          {/* ── Full header panel ── */}
+          <div
+            className="transition-all duration-300 ease-in-out overflow-hidden"
+            style={{
+              maxHeight: showCompactBar ? "0px" : "1000px",
+              opacity: showCompactBar ? 0 : 1,
+              pointerEvents: showCompactBar ? "none" : "auto",
+            }}
+          >
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 gap-6">
               {/* Left side: Main GPA and Progress */}
               <div className="w-full lg:w-1/2 min-w-0">
@@ -223,7 +242,8 @@ export function StatsHeader({
                 </div>
               </div>
             </div>
-          )}
+          </div>
+
         </Card>
       </div>
     </header>
