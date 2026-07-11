@@ -1,19 +1,11 @@
 /**
- * StatsHeader — Sticky header showing overall GPA, year GPAs, and progress.
+ * StatsHeader — Top navigation bar.
+ * Greeting, year tab switcher, and action buttons.
  */
 
 import type { GPAStats } from "@/hooks/useGPA";
-import { useEffect, useRef, useState } from "react";
-import { Button } from "./ui/button";
+import { useEffect, useState } from "react";
 import { FileDown, Moon, RotateCcw, Sun } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
-import { Progress } from "./ui/progress";
 
 interface StatsHeaderProps {
   stats: GPAStats;
@@ -25,8 +17,14 @@ interface StatsHeaderProps {
   onSelectYear: (year: number) => void;
 }
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export function StatsHeader({
-  stats,
   onReset,
   onExport,
   isDark,
@@ -34,217 +32,84 @@ export function StatsHeader({
   activeYear,
   onSelectYear,
 }: StatsHeaderProps) {
-  const [pop, setPop] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [isMobileCompact, setIsMobileCompact] = useState(false);
-  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-  const prevGPA = useRef(stats.classGPA);
-
-  // Trigger pop animation when the visible headline GPA changes.
-  useEffect(() => {
-    if (prevGPA.current !== stats.classGPA) {
-      setPop(true);
-      prevGPA.current = stats.classGPA;
-      const t = setTimeout(() => setPop(false), 300);
-      return () => clearTimeout(t);
-    }
-  }, [stats.classGPA]);
+  const [greeting, setGreeting] = useState(getGreeting());
 
   useEffect(() => {
-    const updateMobileState = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-
-    updateMobileState();
-    window.addEventListener("resize", updateMobileState);
-
-    return () => {
-      window.removeEventListener("resize", updateMobileState);
-    };
+    const t = setInterval(() => setGreeting(getGreeting()), 60_000);
+    return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    if (!isMobileView) {
-      setIsMobileCompact(false);
-      setIsMobileExpanded(false);
-      return;
-    }
-
-    const onScroll = () => {
-      const compact = window.scrollY > 40;
-      setIsMobileCompact(compact);
-      if (!compact) {
-        setIsMobileExpanded(false);
-      }
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [isMobileView]);
-
-  const showCompactBar = isMobileView && isMobileCompact && !isMobileExpanded;
-
   return (
-    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl no-print">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-        <Card className="overflow-hidden">
+    <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 no-print">
+      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
 
-          {/* ── Compact bar (mobile, scrolled) ── */}
-          <div
-            className="transition-all duration-300 ease-in-out overflow-hidden"
-            style={{
-              maxHeight: showCompactBar ? "80px" : "0px",
-              opacity: showCompactBar ? 1 : 0,
-              pointerEvents: showCompactBar ? "auto" : "none",
-            }}
-          >
-            <div className="flex items-center justify-between p-3">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  Class GPA
-                </p>
-                <p className="text-2xl font-semibold tabular-nums text-primary leading-none">
-                  {stats.classGPA}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMobileExpanded(true)}
-                className="text-xs font-semibold px-3 py-1.5 rounded-md border border-border bg-background hover:bg-accent transition-colors"
-              >
-                Expand
-              </button>
-            </div>
+        {/* Greeting */}
+        <div className="min-w-0">
+          <div className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5 leading-tight">
+            {greeting}, Student!
+            <span role="img" aria-label="wave">👋</span>
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+            Track your academic performance and achieve your goals.
+          </p>
+        </div>
 
-          {/* ── Full header panel ── */}
-          <div
-            className="transition-all duration-300 ease-in-out overflow-hidden"
-            style={{
-              maxHeight: showCompactBar ? "0px" : "1000px",
-              opacity: showCompactBar ? 0 : 1,
-              pointerEvents: showCompactBar ? "none" : "auto",
-            }}
+        {/* Year tabs */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-0.5 shrink-0">
+          {[1, 2, 3].map((year) => (
+            <button
+              key={year}
+              type="button"
+              onClick={() => onSelectYear(year)}
+              aria-pressed={activeYear === year}
+              aria-label={`Switch to Year ${year}`}
+              className={`px-5 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${
+                activeYear === year
+                  ? "bg-violet-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Year {year}
+            </button>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onExport}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+            title="Export as PDF"
           >
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 gap-6">
-              {/* Left side: Main GPA and Progress */}
-              <div className="w-full lg:w-1/2 min-w-0">
-                <CardHeader className="p-0">
-                  <CardDescription>🎓 UCSC BIT — Class GPA</CardDescription>
-                  <div className="mt-1 flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
-                    <CardTitle
-                      className={`text-5xl font-semibold tabular-nums tracking-tight text-primary leading-none ${pop ? "gpa-pop" : ""}`}
-                    >
-                      {stats.classGPA}
-                    </CardTitle>
-                    <div className="inline-flex max-w-full items-center rounded-lg bg-secondary/50 px-3 py-2">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          🏅 Awarded Class
-                        </p>
-                        <p className="text-sm font-bold text-card-foreground truncate">
-                          {stats.degreeClass}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Exact overall GPA is shown after you click Get Overall GPA.
-                  </p>
-                </CardHeader>
-                <CardContent className="p-0 mt-4">
-                  <div className="flex items-center gap-2">
-                    <Progress
-                      value={stats.completionPercent}
-                      className="h-1.5"
-                      aria-label={`${stats.completionPercent}% of modules completed`}
-                    />
-                    <span className="text-xs font-bold tabular-nums text-muted-foreground">
-                      {stats.completionPercent}%
-                    </span>
-                  </div>
-                </CardContent>
-              </div>
+            <FileDown className="h-3.5 w-3.5" />
+            Export
+          </button>
 
-              {/* Right side: Year GPAs and Actions */}
-              <div className="flex w-full flex-col items-stretch gap-4 sm:flex-row sm:items-center lg:w-auto">
-                <div className="grid grid-cols-3 gap-3 sm:gap-4 flex-1">
-                  {[1, 2, 3].map((year) => (
-                    <button
-                      key={year}
-                      type="button"
-                      onClick={() => onSelectYear(year)}
-                      className={`rounded-lg p-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${activeYear === year ? "bg-primary text-primary-foreground shadow-sm" : "bg-secondary/50 hover:bg-secondary"}`}
-                      aria-label={`View Year ${year}`}
-                      aria-pressed={activeYear === year}
-                    >
-                      <p
-                        className={`text-xs ${activeYear === year ? "text-primary-foreground/80" : "text-muted-foreground"}`}
-                      >
-                        {year === 1 ? "🌱" : year === 2 ? "🚀" : "🏁"} Year{" "}
-                        {year}
-                      </p>
-                      <p className="text-2xl font-bold tabular-nums">
-                        {stats.yearResults[year].classGPA}
-                      </p>
-                    </button>
-                  ))}
-                </div>
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-slate-800 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all active:scale-95"
+            title="Reset all grades"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset
+          </button>
 
-                {/* Actions */}
-                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
-                  {isMobileView && isMobileCompact && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsMobileExpanded(false)}
-                      size="sm"
-                      className="w-full sm:w-auto"
-                    >
-                      Collapse
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    onClick={onExport}
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    <FileDown className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={onReset}
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size={isMobileView ? "sm" : "icon"}
-                    onClick={onToggleDark}
-                    title="Toggle dark mode"
-                    className="w-full sm:w-auto"
-                  >
-                    {isDark ? (
-                      <Sun className="h-4 w-4" />
-                    ) : (
-                      <Moon className="h-4 w-4" />
-                    )}
-                    {isMobileView && <span>Theme</span>}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={onToggleDark}
+            aria-label="Toggle dark mode"
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center"
+          >
+            {isDark
+              ? <Sun className="h-4 w-4 text-amber-400" />
+              : <Moon className="h-4 w-4 text-slate-500" />
+            }
+          </button>
+        </div>
 
-        </Card>
       </div>
     </header>
   );

@@ -1,9 +1,9 @@
 /**
- * ModuleRow — Single module with grade dropdown.
- * Displays module name, type badge, and grade selector.
+ * ModuleRow — Module with inline Repeat button + Grade dropdown.
+ * Matches reference design: name/credits on left, controls on right.
  */
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "./ui/sonner";
@@ -19,23 +19,39 @@ interface ModuleRowProps {
   id: string;
   name: string;
   type: ModuleType;
+  credits: number;
   grade: string;
   repeatGrade: string;
   onGradeChange: (moduleId: string, grade: string) => void;
   onRepeatGradeChange: (moduleId: string, grade: string) => void;
 }
 
-const typeBadge: Record<
-  ModuleType,
-  { label: string; className: string } | null
-> = {
+function getGradeColor(grade: string): string {
+  if (!grade) return "text-slate-400 dark:text-slate-500";
+  if (grade === "Fail" || grade === "Not Sit") return "text-red-500 font-semibold";
+  if (grade === "Pass") return "text-emerald-600 dark:text-emerald-400 font-semibold";
+  const point = GRADE_SCALE[grade];
+  if (point === null || point === undefined) return "text-slate-500";
+  if (point >= 3.7) return "text-emerald-600 dark:text-emerald-400 font-bold";
+  if (point >= 3.0) return "text-sky-600 dark:text-sky-400 font-semibold";
+  if (point >= 2.3) return "text-indigo-600 dark:text-indigo-400 font-semibold";
+  if (point >= 2.0) return "text-amber-600 dark:text-amber-400 font-semibold";
+  return "text-red-500 font-semibold";
+}
+
+const TYPE_BADGE: Record<ModuleType, { label: string; cls: string } | null> = {
   gpa: null,
-  "non-gpa": { label: "Non-GPA", className: "bg-muted text-muted-foreground" },
-  optional: { label: "Optional", className: "bg-primary/10 text-primary" },
+  "non-gpa": {
+    label: "Non-GPA",
+    cls: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+  },
+  optional: {
+    label: "Optional",
+    cls: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300",
+  },
   "extra-optional": {
-    label: "Extra Optional",
-    className:
-      "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+    label: "Extra Opt",
+    cls: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300",
   },
 };
 
@@ -43,6 +59,7 @@ export function ModuleRow({
   id,
   name,
   type,
+  credits,
   grade,
   repeatGrade,
   onGradeChange,
@@ -57,19 +74,11 @@ export function ModuleRow({
   const [menuMaxHeight, setMenuMaxHeight] = useState(280);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const previousNeedsRepeatRef = useRef(false);
+  const prevNeedsRepeatRef = useRef(false);
 
-  const badge = typeBadge[type];
-  const gradeOptions =
-    type === "non-gpa" ? NON_GPA_GRADE_OPTIONS : GPA_GRADE_OPTIONS;
-  const gradeTone =
-    grade === "Fail" || grade === "Not Sit"
-      ? "text-destructive"
-      : grade === "Pass"
-        ? "text-success"
-        : grade
-          ? "text-primary"
-          : "text-muted-foreground";
+  const badge = TYPE_BADGE[type];
+  const gradeOptions = type === "non-gpa" ? NON_GPA_GRADE_OPTIONS : GPA_GRADE_OPTIONS;
+  const gradeColor = getGradeColor(grade);
 
   const basePoint = grade ? GRADE_SCALE[grade] : null;
   const canRepeat =
@@ -80,21 +89,11 @@ export function ModuleRow({
     basePoint !== undefined &&
     basePoint < GRADE_SCALE.C;
   const hasBaseGrade = grade !== "" && grade !== "Not Sit";
-  const disableRepeatButton = !repeatOpen && !canRepeat && hasBaseGrade;
-  const showRepeatControls = countsForGPA(type) || repeatOpen;
-  const showRepeatInlineAlert = canRepeat && repeatGrade === "";
-  const repeatHint = !hasBaseGrade
-    ? "Select your first-attempt grade to unlock repeat."
-    : canRepeat
-      ? "Repeat is available for grades below C."
-      : "";
-
+  const showRepeatButton = countsForGPA(type);
   const repeatOptions = GPA_GRADE_OPTIONS.filter((g) => g !== "Not Sit");
 
   useEffect(() => {
-    if (repeatGrade !== "") {
-      setRepeatOpen(true);
-    }
+    if (repeatGrade !== "") setRepeatOpen(true);
   }, [repeatGrade]);
 
   useEffect(() => {
@@ -105,142 +104,158 @@ export function ModuleRow({
   }, [canRepeat, id, onRepeatGradeChange, repeatGrade, repeatOpen]);
 
   useEffect(() => {
-    const needsRepeatInput = canRepeat && repeatGrade === "";
-
-    if (needsRepeatInput && !previousNeedsRepeatRef.current) {
+    const needsRepeat = canRepeat && repeatGrade === "";
+    if (needsRepeat && !prevNeedsRepeatRef.current) {
       toast.error("If you have repeat, please input the repeat grade.", {
         description: "A grade below C was selected.",
         duration: 4000,
       });
     }
-
-    previousNeedsRepeatRef.current = needsRepeatInput;
+    prevNeedsRepeatRef.current = needsRepeat;
   }, [canRepeat, repeatGrade]);
 
-  useEffect(() => {
-    setPortalReady(true);
-  }, []);
+  useEffect(() => { setPortalReady(true); }, []);
 
   const updateMenuPosition = useCallback(() => {
     if (!triggerRef.current) return;
-
-    const triggerRect = triggerRef.current.getBoundingClientRect();
-    const viewportPadding = 12;
-    const gap = 8;
-    const preferredHeight = 280;
-    const minHeight = 160;
-    const spaceBelow =
-      window.innerHeight - triggerRect.bottom - viewportPadding;
-    const spaceAbove = triggerRect.top - viewportPadding;
-    const openUpward = spaceBelow < minHeight && spaceAbove > spaceBelow;
-    const availableSpace = openUpward ? spaceAbove : spaceBelow;
-    const maxHeight = Math.max(
-      140,
-      Math.min(preferredHeight, Math.floor(availableSpace)),
-    );
-
-    const top = openUpward
-      ? Math.max(viewportPadding, triggerRect.top - gap - maxHeight)
-      : triggerRect.bottom + gap;
-    const width = Math.max(triggerRect.width, 156);
-    const left = Math.min(
-      window.innerWidth - viewportPadding - width,
-      Math.max(viewportPadding, triggerRect.right - width),
-    );
-
+    const rect = triggerRef.current.getBoundingClientRect();
+    const vp = 12;
+    const gap = 6;
+    const preferred = 260;
+    const minH = 140;
+    const below = window.innerHeight - rect.bottom - vp;
+    const above = rect.top - vp;
+    const up = below < minH && above > below;
+    const avail = up ? above : below;
+    const maxH = Math.max(120, Math.min(preferred, Math.floor(avail)));
+    const top = up ? Math.max(vp, rect.top - gap - maxH) : rect.bottom + gap;
+    const w = Math.max(rect.width, 140);
+    const left = Math.min(window.innerWidth - vp - w, Math.max(vp, rect.right - w));
     setMenuTop(top);
     setMenuLeft(left);
-    setMenuWidth(width);
-    setMenuMaxHeight(maxHeight);
+    setMenuWidth(w);
+    setMenuMaxHeight(maxH);
   }, []);
 
   useEffect(() => {
     if (!open) return;
-
     updateMenuPosition();
-
-    const onPointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        triggerRef.current?.contains(target) ||
-        menuRef.current?.contains(target)
-      ) {
-        return;
-      }
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || menuRef.current?.contains(t)) return;
       setOpen(false);
     };
-
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    const onViewportChange = () => {
-      updateMenuPosition();
-    };
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onEscape);
-    window.addEventListener("resize", onViewportChange);
-    window.addEventListener("scroll", onViewportChange, true);
-
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onVp = () => updateMenuPosition();
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    window.addEventListener("resize", onVp);
+    window.addEventListener("scroll", onVp, true);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onEscape);
-      window.removeEventListener("resize", onViewportChange);
-      window.removeEventListener("scroll", onViewportChange, true);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onEsc);
+      window.removeEventListener("resize", onVp);
+      window.removeEventListener("scroll", onVp, true);
     };
   }, [open, updateMenuPosition]);
 
+  const handleRepeatClick = () => {
+    if (!hasBaseGrade) {
+      toast.error("Select first-attempt grade first", {
+        description: "You need to choose the grade you got before adding a repeat.",
+        duration: 3000,
+      });
+      return;
+    }
+    if (!canRepeat && !repeatOpen) {
+      toast("Repeat not available", {
+        description: "Repeat is only allowed for grades below C.",
+        duration: 3000,
+      });
+      return;
+    }
+    if (repeatOpen) {
+      setRepeatOpen(false);
+      onRepeatGradeChange(id, "");
+    } else {
+      setRepeatOpen(true);
+    }
+  };
+
   return (
-    <div className="py-2.5">
-      <div className="flex items-center justify-between gap-3 group">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+    <div className="px-5 py-3">
+      {/* Main row */}
+      <div className="flex items-center justify-between gap-3">
+        {/* Left: name + credits */}
+        <div className="min-w-0 flex-1">
           <label
             htmlFor={id}
-            className="text-sm font-medium leading-tight truncate cursor-pointer"
+            className="text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer block leading-tight truncate"
           >
             {name}
           </label>
-          {badge && (
-            <span
-              className={`shrink-0 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${badge.className}`}
-            >
-              {badge.label}
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-xs text-slate-400 dark:text-slate-500">
+              {credits} Credits
             </span>
-          )}
+            {badge && (
+              <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badge.cls}`}>
+                {badge.label}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="relative shrink-0 w-28">
-          <button
-            id={id}
-            ref={triggerRef}
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className={`flex w-full items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums shadow-sm outline-none transition-colors hover:border-primary/40 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-primary/20 ${open ? "border-primary/60 bg-accent/30" : ""}`}
-            aria-haspopup="listbox"
-            aria-expanded={open}
-            aria-label={`Choose grade for ${name}`}
-          >
-            <span className={gradeTone}>{grade || "Choose"}</span>
-            <ChevronDown
-              className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-              aria-hidden="true"
-            />
-          </button>
+        {/* Right: Repeat + Grade */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Repeat button — only for GPA modules */}
+          {showRepeatButton && (
+            <button
+              type="button"
+              onClick={handleRepeatClick}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 ${
+                repeatOpen
+                  ? "border-violet-400 bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400"
+                  : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500"
+              }`}
+              title={canRepeat ? "Add repeat grade" : "Repeat only for grades below C"}
+            >
+              <RefreshCw className="h-3 w-3" />
+              Repeat
+            </button>
+          )}
 
-          {portalReady &&
-            open &&
-            createPortal(
+          {/* Grade dropdown */}
+          <div className="relative w-24">
+            <button
+              id={id}
+              ref={triggerRef}
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className={`flex w-full items-center justify-between gap-1 rounded-lg border px-2.5 py-1.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 ${
+                open
+                  ? "border-violet-400 dark:border-violet-500 bg-violet-50/50 dark:bg-violet-950/20"
+                  : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-500"
+              }`}
+              aria-haspopup="listbox"
+              aria-expanded={open}
+              aria-label={`Choose grade for ${name}`}
+            >
+              <span className={grade ? gradeColor : "text-slate-400 dark:text-slate-500 font-normal"}>
+                {grade || "Grade"}
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
+
+            {/* Dropdown portal */}
+            {portalReady && open && createPortal(
               <div
                 ref={menuRef}
-                className="fixed z-[25] overflow-hidden rounded-xl border border-border bg-popover shadow-xl"
-                style={{
-                  top: `${menuTop}px`,
-                  left: `${menuLeft}px`,
-                  width: `${menuWidth}px`,
-                }}
+                className="fixed z-[200] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl"
+                style={{ top: `${menuTop}px`, left: `${menuLeft}px`, width: `${menuWidth}px` }}
               >
                 <ul
                   className="overflow-y-auto py-1"
@@ -251,40 +266,26 @@ export function ModuleRow({
                   <li>
                     <button
                       type="button"
-                      onClick={() => {
-                        onGradeChange(id, "");
-                        onRepeatGradeChange(id, "");
-                        setOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${!grade ? "bg-accent/70 text-accent-foreground" : "text-muted-foreground"}`}
+                      onClick={() => { onGradeChange(id, ""); onRepeatGradeChange(id, ""); setOpen(false); }}
+                      className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                        !grade ? "text-slate-500 font-medium bg-slate-50 dark:bg-slate-700/50" : "text-slate-400"
+                      }`}
                     >
-                      <span>Choose</span>
-                      {!grade && (
-                        <span className="text-sm font-bold" aria-hidden="true">
-                          ✓
-                        </span>
-                      )}
+                      <span>Clear</span>
+                      {!grade && <span className="text-violet-600 font-bold text-xs">✓</span>}
                     </button>
                   </li>
                   {gradeOptions.map((g) => (
                     <li key={g}>
                       <button
                         type="button"
-                        onClick={() => {
-                          onGradeChange(id, g);
-                          setOpen(false);
-                        }}
-                        className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium tabular-nums transition-colors hover:bg-accent hover:text-accent-foreground ${grade === g ? "bg-accent/70 text-accent-foreground" : "text-popover-foreground"}`}
+                        onClick={() => { onGradeChange(id, g); setOpen(false); }}
+                        className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                          grade === g ? "bg-slate-50 dark:bg-slate-700/50 font-semibold" : ""
+                        }`}
                       >
-                        <span>{g}</span>
-                        {grade === g && (
-                          <span
-                            className="text-sm font-bold"
-                            aria-hidden="true"
-                          >
-                            ✓
-                          </span>
-                        )}
+                        <span className={getGradeColor(g)}>{g}</span>
+                        {grade === g && <span className="text-violet-600 font-bold text-xs">✓</span>}
                       </button>
                     </li>
                   ))}
@@ -292,72 +293,30 @@ export function ModuleRow({
               </div>,
               document.body,
             )}
+          </div>
         </div>
       </div>
 
-      {showRepeatInlineAlert && (
-        <p className="mt-1 whitespace-nowrap text-[11px] font-medium leading-tight text-destructive text-right">
-          If repeated, add repeat grade.
-        </p>
-      )}
-
-      {showRepeatControls && (
-        <div className="mt-2 rounded-lg border border-border/70 bg-secondary/30 px-2.5 py-2">
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              disabled={disableRepeatButton}
-              onClick={() => {
-                if (!hasBaseGrade && !repeatOpen) {
-                  toast.error("Select first-attempt grade first", {
-                    description:
-                      "You need to first choose the exact grade you got.",
-                    duration: 3000,
-                  });
-                  return;
-                }
-
-                if (repeatOpen) {
-                  setRepeatOpen(false);
-                  onRepeatGradeChange(id, "");
-                } else {
-                  setRepeatOpen(true);
-                }
-              }}
-              className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors ${repeatOpen ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent"} ${disableRepeatButton ? "opacity-50 cursor-not-allowed hover:bg-transparent" : ""}`}
-            >
-              Repeat
-            </button>
-
-            {repeatOpen && (
-              <select
-                value={repeatGrade}
-                onChange={(e) => onRepeatGradeChange(id, e.target.value)}
-                className="w-28 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-semibold tabular-nums outline-none focus:ring-2 focus:ring-primary/20"
-                aria-label={`Repeat grade for ${name}`}
-              >
-                <option value="">Choose</option>
-                {repeatOptions.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {repeatHint && (
-            <p className="mt-1.5 text-[11px] text-muted-foreground text-right">
-              {repeatHint}
-            </p>
-          )}
-
-          {repeatOpen && (
-            <p className="mt-1 text-[11px] text-primary text-right font-medium">
-              Repeat rule: class GPA counts up to C, overall GPA uses the exact
-              repeat grade.
-            </p>
-          )}
+      {/* Repeat grade row (when open) */}
+      {repeatOpen && (
+        <div className="mt-2 flex items-center gap-2 pl-0">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+            Repeat grade:
+          </span>
+          <select
+            value={repeatGrade}
+            onChange={(e) => onRepeatGradeChange(id, e.target.value)}
+            className="rounded-lg border border-violet-200 dark:border-violet-700/50 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/25"
+            aria-label={`Repeat grade for ${name}`}
+          >
+            <option value="">Choose</option>
+            {repeatOptions.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+          <span className="text-[10px] text-violet-500 dark:text-violet-400">
+            Class GPA capped at C
+          </span>
         </div>
       )}
     </div>

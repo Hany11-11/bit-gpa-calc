@@ -1,12 +1,12 @@
 /**
- * SemesterCard — Displays a semester's modules with its SGPA.
+ * SemesterCard — Flat white card matching the reference design.
+ * Colored dot header, module progress, and inline module list.
  */
 
 import { useEffect, useRef } from "react";
 import type { Semester } from "@/utils/constants";
 import type { SemesterResult } from "@/hooks/useGPA";
 import { ModuleRow } from "./ModuleRow";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertTriangle } from "lucide-react";
 import {
   countsForGPA,
@@ -24,6 +24,42 @@ interface SemesterCardProps {
   onRepeatGradeChange: (moduleId: string, grade: string) => void;
 }
 
+const SEMESTER_STYLES: Record<
+  number,
+  { dot: string; sgpaColor: string; headerBorder: string }
+> = {
+  1: {
+    dot: "bg-indigo-500",
+    sgpaColor: "text-indigo-600 dark:text-indigo-400",
+    headerBorder: "border-indigo-100 dark:border-indigo-900/40",
+  },
+  2: {
+    dot: "bg-emerald-500",
+    sgpaColor: "text-emerald-600 dark:text-emerald-400",
+    headerBorder: "border-emerald-100 dark:border-emerald-900/40",
+  },
+  3: {
+    dot: "bg-amber-500",
+    sgpaColor: "text-amber-600 dark:text-amber-400",
+    headerBorder: "border-amber-100 dark:border-amber-900/40",
+  },
+  4: {
+    dot: "bg-rose-500",
+    sgpaColor: "text-rose-600 dark:text-rose-400",
+    headerBorder: "border-rose-100 dark:border-rose-900/40",
+  },
+  5: {
+    dot: "bg-violet-500",
+    sgpaColor: "text-violet-600 dark:text-violet-400",
+    headerBorder: "border-violet-100 dark:border-violet-900/40",
+  },
+  6: {
+    dot: "bg-cyan-500",
+    sgpaColor: "text-cyan-600 dark:text-cyan-400",
+    headerBorder: "border-cyan-100 dark:border-cyan-900/40",
+  },
+};
+
 export function SemesterCard({
   semester,
   result,
@@ -32,84 +68,59 @@ export function SemesterCard({
   onGradeChange,
   onRepeatGradeChange,
 }: SemesterCardProps) {
-  const semesterTitleColorClass: Record<number, string> = {
-    1: "text-sky-600 dark:text-sky-400",
-    2: "text-emerald-600 dark:text-emerald-400",
-    3: "text-amber-600 dark:text-amber-400",
-    4: "text-rose-600 dark:text-rose-400",
-    5: "text-violet-600 dark:text-violet-400",
-    6: "text-cyan-600 dark:text-cyan-400",
-  };
-
+  const style = SEMESTER_STYLES[semester.id] ?? SEMESTER_STYLES[1];
   const previousIneligibleCountRef = useRef(0);
 
   const ineligibleCount = semester.modules.filter((mod) => {
-    const grade = getEffectiveGrade(
-      mod.type,
-      grades[mod.id],
-      repeatGrades[mod.id],
-    );
+    const grade = getEffectiveGrade(mod.type, grades[mod.id], repeatGrades[mod.id]);
     if (!grade) return false;
-
-    if (mod.type === "non-gpa") {
-      return grade === "Fail" || grade === "Not Sit";
-    }
-
-    if (!countsForGPA(mod.type)) {
-      return false;
-    }
-
+    if (mod.type === "non-gpa") return grade === "Fail" || grade === "Not Sit";
+    if (!countsForGPA(mod.type)) return false;
     if (grade === "Not Sit") return true;
-
     const points = GRADE_SCALE[grade];
     return points !== null && points !== undefined && points < GRADE_SCALE.D;
   }).length;
 
-  const hasIneligibleGrade = ineligibleCount > 0;
-
   useEffect(() => {
     if (ineligibleCount > previousIneligibleCountRef.current) {
       toast.error("Not eligible for next year", {
-        description: "You are not eligible for next year. You must re-sit.",
+        description: "You must re-sit the failed module(s).",
         duration: 5000,
       });
     }
-
     previousIneligibleCountRef.current = ineligibleCount;
   }, [ineligibleCount]);
 
+  // Right label: show "X/N SGPA" when no grades, show "GPA SGPA" when calculated
+  const sgpaLabel =
+    result.classGPA !== "—"
+      ? `${result.classGPA} SGPA`
+      : `${result.modulesCompleted} / ${result.totalGpaModules} SGPA`;
+
   return (
-    <section className="bg-card rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+    <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-start mb-4 pb-3 border-b border-border">
-        <div>
-          <h2
-            className={`font-bold text-base tracking-tight ${semesterTitleColorClass[semester.id] ?? "text-card-foreground"}`}
-          >
+      <div className={`flex items-center justify-between px-5 py-3.5 border-b ${style.headerBorder} border-slate-100 dark:border-slate-700/60`}>
+        <div className="flex items-center gap-2.5">
+          <span className={`w-2.5 h-2.5 rounded-full ${style.dot} shrink-0`} />
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
             {semester.title}
           </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {result.modulesCompleted}/{result.totalGpaModules} modules graded
-          </p>
         </div>
-        <div className="text-right">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            SGPA
-          </span>
-          <p className="text-xl font-black tabular-nums text-primary leading-tight">
-            {result.classGPA}
-          </p>
-        </div>
+        <span className={`text-xs font-bold ${style.sgpaColor}`}>
+          {sgpaLabel}
+        </span>
       </div>
 
-      {/* Module list */}
-      <div className="divide-y divide-border/50">
+      {/* Module rows */}
+      <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
         {semester.modules.map((mod) => (
           <ModuleRow
             key={mod.id}
             id={mod.id}
             name={mod.name}
             type={mod.type}
+            credits={mod.credits}
             grade={grades[mod.id] || ""}
             repeatGrade={repeatGrades[mod.id] || ""}
             onGradeChange={onGradeChange}
@@ -118,14 +129,14 @@ export function SemesterCard({
         ))}
       </div>
 
-      {hasIneligibleGrade && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Not eligible for next year</AlertTitle>
-          <AlertDescription>
-            You are not eligible for next year. You must re-sit.
-          </AlertDescription>
-        </Alert>
+      {/* Ineligible warning */}
+      {ineligibleCount > 0 && (
+        <div className="mx-4 mb-3 mt-2 flex items-start gap-2 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 px-3 py-2">
+          <AlertTriangle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+          <p className="text-xs font-medium text-red-600 dark:text-red-400">
+            Not eligible for next year — you must re-sit the failed module(s).
+          </p>
+        </div>
       )}
     </section>
   );
