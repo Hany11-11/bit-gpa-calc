@@ -3,7 +3,7 @@
  * Manages grade state and computes semester, year, and overall GPAs reactively.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   countsForGPA,
   getEffectiveGrade,
@@ -57,8 +57,29 @@ export interface YearRuleResult {
 }
 
 export function useGPA() {
-  const [grades, setGrades] = useState<Record<string, string>>({});
-  const [repeatGrades, setRepeatGrades] = useState<Record<string, string>>({});
+  const [grades, setGrades] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("bit-grades");
+      if (saved) return JSON.parse(saved);
+    }
+    return {};
+  });
+
+  const [repeatGrades, setRepeatGrades] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("bit-repeat-grades");
+      if (saved) return JSON.parse(saved);
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem("bit-grades", JSON.stringify(grades));
+  }, [grades]);
+
+  useEffect(() => {
+    localStorage.setItem("bit-repeat-grades", JSON.stringify(repeatGrades));
+  }, [repeatGrades]);
 
   const setGrade = useCallback((moduleId: string, grade: string) => {
     setGrades((prev) => ({ ...prev, [moduleId]: grade }));
