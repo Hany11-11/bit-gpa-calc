@@ -100,14 +100,14 @@ export function SemesterCard({
   return (
     <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className={`flex items-center justify-between px-5 py-3.5 border-b ${style.headerBorder} border-slate-100 dark:border-slate-700/60`}>
-        <div className="flex items-center gap-2.5">
+      <div className={`flex items-center justify-between px-3 sm:px-5 py-3 sm:py-3.5 border-b ${style.headerBorder} border-slate-100 dark:border-slate-700/60`}>
+        <div className="flex items-center gap-2 sm:gap-2.5">
           <span className={`w-2.5 h-2.5 rounded-full ${style.dot} shrink-0`} />
-          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+          <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
             {semester.title}
           </h2>
         </div>
-        <span className={`text-xs font-bold ${style.sgpaColor}`}>
+        <span className={`text-[11px] sm:text-xs font-bold ${style.sgpaColor}`}>
           {sgpaLabel}
         </span>
       </div>
@@ -131,9 +131,9 @@ export function SemesterCard({
 
       {/* Ineligible warning */}
       {ineligibleCount > 0 && (
-        <div className="mx-4 mb-3 mt-2 flex items-start gap-2 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 px-3 py-2">
+        <div className="mx-3 sm:mx-4 mb-3 mt-2 flex items-start gap-2 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 px-2.5 sm:px-3 py-2">
           <AlertTriangle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
-          <p className="text-xs font-medium text-red-600 dark:text-red-400">
+          <p className="text-[11px] sm:text-xs font-medium text-red-600 dark:text-red-400">
             Not eligible for next year — you must re-sit the failed module(s).
           </p>
         </div>

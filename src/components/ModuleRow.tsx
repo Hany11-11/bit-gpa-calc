@@ -183,23 +183,23 @@ export function ModuleRow({
   };
 
   return (
-    <div className="px-5 py-3">
+    <div className="px-3 sm:px-5 py-3">
       {/* Main row */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
         {/* Left: name + credits */}
         <div className="min-w-0 flex-1">
           <label
             htmlFor={id}
-            className="text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer block leading-tight truncate"
+            className="text-[13px] sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer block leading-tight truncate"
           >
             {name}
           </label>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-slate-400 dark:text-slate-500">
+            <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500">
               {credits} Credits
             </span>
             {badge && (
-              <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badge.cls}`}>
+              <span className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badge.cls}`}>
                 {badge.label}
               </span>
             )}
@@ -213,7 +213,7 @@ export function ModuleRow({
             <button
               type="button"
               onClick={handleRepeatClick}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg border text-[11px] sm:text-xs font-semibold transition-all active:scale-95 min-h-[36px] ${
                 repeatOpen
                   ? "border-violet-400 bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400"
                   : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500"
@@ -226,13 +226,13 @@ export function ModuleRow({
           )}
 
           {/* Grade dropdown */}
-          <div className="relative w-24">
+          <div className="relative w-20 sm:w-24">
             <button
               id={id}
               ref={triggerRef}
               type="button"
               onClick={() => setOpen((v) => !v)}
-              className={`flex w-full items-center justify-between gap-1 rounded-lg border px-2.5 py-1.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 ${
+              className={`flex w-full items-center justify-between gap-1 rounded-lg border px-2 sm:px-2.5 py-1.5 text-[13px] sm:text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 min-h-[36px] ${
                 open
                   ? "border-violet-400 dark:border-violet-500 bg-violet-50/50 dark:bg-violet-950/20"
                   : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-500"
@@ -267,7 +267,7 @@ export function ModuleRow({
                     <button
                       type="button"
                       onClick={() => { onGradeChange(id, ""); onRepeatGradeChange(id, ""); setOpen(false); }}
-                      className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                      className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ${
                         !grade ? "text-slate-500 font-medium bg-slate-50 dark:bg-slate-700/50" : "text-slate-400"
                       }`}
                     >
@@ -280,7 +280,7 @@ export function ModuleRow({
                       <button
                         type="button"
                         onClick={() => { onGradeChange(id, g); setOpen(false); }}
-                        className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                        className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ${
                           grade === g ? "bg-slate-50 dark:bg-slate-700/50 font-semibold" : ""
                         }`}
                       >
@@ -299,14 +299,14 @@ export function ModuleRow({
 
       {/* Repeat grade row (when open) */}
       {repeatOpen && (
-        <div className="mt-2 flex items-center gap-2 pl-0">
+        <div className="mt-2 flex flex-wrap items-center gap-2 pl-0">
           <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
             Repeat grade:
           </span>
           <select
             value={repeatGrade}
             onChange={(e) => onRepeatGradeChange(id, e.target.value)}
-            className="rounded-lg border border-violet-200 dark:border-violet-700/50 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/25"
+            className="rounded-lg border border-violet-200 dark:border-violet-700/50 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/25 min-h-[32px]"
             aria-label={`Repeat grade for ${name}`}
           >
             <option value="">Choose</option>
@@ -314,7 +314,7 @@ export function ModuleRow({
               <option key={g} value={g}>{g}</option>
             ))}
           </select>
-          <span className="text-[10px] text-violet-500 dark:text-violet-400">
+          <span className="text-[10px] text-violet-500 dark:text-violet-400 hidden sm:inline">
             Class GPA capped at C
           </span>
         </div>
