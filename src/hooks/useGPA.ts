@@ -510,6 +510,8 @@ export function useGPA() {
         degreeClass = "Second Class (Upper Division)";
       } else if (classGpaValue >= 3.0) {
         degreeClass = "Second Class (Lower Division)";
+      } else if (classGpaValue >= 2.0) {
+        degreeClass = "Pass";
       } else {
         degreeClass = "Degree Eligible (No Class Awarded)";
       }

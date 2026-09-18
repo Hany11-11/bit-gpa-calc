@@ -14,9 +14,9 @@ import { Award, Info, ExternalLink } from "lucide-react";
 /* ── GPA scale reference data ─────────────────────────────────── */
 const GPA_SCALE_BANDS = [
   { range: "3.70 – 4.00", label: "First Class" },
-  { range: "3.00 – 3.69", label: "Second Class (Upper)" },
-  { range: "2.00 – 2.99", label: "Second Class (Lower)" },
-  { range: "0.00 – 1.99", label: "Pass" },
+  { range: "3.30 – 3.69", label: "Second Class (Upper Division)" },
+  { range: "3.00 – 3.29", label: "Second Class (Lower Division)" },
+  { range: "2.00 – 2.99", label: "Pass" },
 ];
 
 /* ── Year metadata ─────────────────────────────────────────────── */
